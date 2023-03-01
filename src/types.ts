@@ -29,7 +29,7 @@ declare global {
 			image: string;
 		}
 	}
-	interface window {
+	interface Window {
 		_updateCanvas: (width: number, height: number) => void;
 	}
 }

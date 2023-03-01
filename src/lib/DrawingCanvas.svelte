@@ -47,7 +47,7 @@
     window.devicePixelRatio = 1;
     pxBrush = new PxBrush(canvas);
     canvas.style.height = "auto";
-    canvas.style.width = "auto";
+    canvas.style.width = "100%";
     $currentCanvas = canvas;
     clearCanvas(ctx);
     window._updateCanvas = updateCanvas;
@@ -56,6 +56,9 @@
     canvasSize = { width, height };
     canvas.width = canvasSize.width;
     canvas.height = canvasSize.height;
+    pxBrush = new PxBrush(canvas);
+    canvas.style.height = "auto";
+    canvas.style.width = "100%";
     clearCanvas(ctx);
   }
 
@@ -235,12 +238,22 @@
 
 <style lang="postcss" scoped>
   .canvas {
-    @apply max-w-full w-full z-0 border dark:border-gray-300 border-gray-500 aspect-square;
+    @apply max-w-full w-full z-0 border dark:border-gray-300 border-gray-500;
   }
   .brush {
     @apply z-10 absolute pointer-events-none -translate-x-1/2 -translate-y-1/2 dark:text-white;
   }
   .color-picker :global(*) {
     color: black !important;
+  }
+  :global(.isPopup) {
+    top: -342px !important;
+    z-index: 10001 !important;
+    left: -25px !important;
+  }
+  :global(.alpha),
+  :global(.color) {
+    width: 25px !important;
+    height: 25px !important;
   }
 </style>
