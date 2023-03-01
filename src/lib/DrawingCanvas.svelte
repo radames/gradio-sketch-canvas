@@ -5,18 +5,14 @@
   import { onMount } from "svelte";
   import type { Brush, Color, RGB } from "../types";
   import UndoIcon from "./Icons/Undo.svelte";
-  import {
-    selectedImage,
-    currentCanvas,
-    drawingLayers,
-    canvasSize,
-  } from "./store";
+  import { selectedImage, currentCanvas, drawingLayers } from "./store";
 
   let rgb = { r: 0, g: 0, b: 0, a: 1 };
   let canvas: HTMLCanvasElement;
   let brush: HTMLCanvasElement;
   let canvasRootEl: HTMLDivElement;
 
+  let canvasSize = { width: 512, height: 512 };
   $: brushColor = `rgb(${rgb.r},${rgb.g},${rgb.b})` as RGB;
   let brushSize: number = 40;
 
@@ -41,33 +37,46 @@
   }
 
   onMount(() => {
+    canvasRootEl = document.getElementById("canvas-root") as HTMLDivElement;
+    if (!canvasRootEl._data) canvasRootEl._data = { colors: [], image: null };
+
     ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+    canvas.width = canvasSize.width;
+    canvas.height = canvasSize.height;
     brushCtx = brush.getContext("2d") as CanvasRenderingContext2D;
     window.devicePixelRatio = 1;
     pxBrush = new PxBrush(canvas);
-    canvas.style.height = "unset";
-    canvas.style.width = "unset";
+    canvas.style.height = "auto";
+    canvas.style.width = "auto";
     $currentCanvas = canvas;
     clearCanvas(ctx);
-    canvasRootEl = document.getElementById("canvas-root") as HTMLDivElement;
-    if (!canvasRootEl.selectedColors) canvasRootEl.selectedColors = [];
+    window._updateCanvas = updateCanvas;
   });
+  function updateCanvas(width, height) {
+    canvasSize = { width, height };
+    canvas.width = canvasSize.width;
+    canvas.height = canvasSize.height;
+    clearCanvas(ctx);
+  }
 
   function updateGlobalColors() {
-    canvasRootEl.selectedColors = [
+    if (!canvasRootEl._data) canvasRootEl._data = { colors: [], image: null };
+    canvasRootEl._data.colors = [
       ...new Set([...$drawingLayers.values()].map((e) => e.brush.color)),
     ];
-    console.log(canvasRootEl.selectedColors);
+    canvasRootEl._data.image = canvas.toDataURL();
   }
 
   let mouseDown: boolean = false;
   let currLayerId: string;
   function pointerEnter() {
     brush.hidden = false;
+    updateGlobalColors();
   }
   function pointerOut() {
     brush.hidden = true;
     mouseDown = false;
+    updateGlobalColors();
   }
   function pointerDown(e: MouseEvent) {
     mouseDown = true;
@@ -132,7 +141,7 @@
   }
 
   function clearCanvas(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = "#fff";
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   }
 
@@ -157,8 +166,8 @@
   }
   function drawLayers(ctx: CanvasRenderingContext2D) {
     const tempcanvas = document.createElement("canvas");
-    tempcanvas.width = $canvasSize.width;
-    tempcanvas.height = $canvasSize.height;
+    tempcanvas.width = canvasSize.width;
+    tempcanvas.height = canvasSize.height;
     window.devicePixelRatio = 1;
     const pxBrush = new PxBrush(tempcanvas);
     clearCanvas(ctx);
@@ -187,8 +196,6 @@
     <canvas
       bind:this={canvas}
       class="canvas"
-      width={$canvasSize.width}
-      height={$canvasSize.height}
       on:touchmove={(e) => e.preventDefault()}
       on:pointerenter={pointerEnter}
       on:pointerup={pointerOut}
@@ -200,23 +207,28 @@
     />
     <canvas bind:this={brush} class="brush" width="10" height="10" />
     <button
-      class="absolute bottom-0 left-0 p-3"
+      class="absolute bottom-0 left-0 !m-0 !p-3 "
       on:click|preventDefault={() => rollBack()}
-      disabled={$drawingLayers.size <= 0}><UndoIcon /></button
+      disabled={$drawingLayers.size <= 0}
+      ><UndoIcon classNames={"!text-black"} /></button
     >
   </div>
-  <div class="flex items-center gap-2">
-    <ColorPicker bind:rgb label="Color" toRight={false} isAlpha={false} />
-    <div class="flex items-center gap-2">
+  <div class="flex  gap-2 p-1">
+    <span class="color-picker px-3 drop-shadow-2xl bg-gray-100 rounded-xl">
+      <ColorPicker bind:rgb label="Color" isAlpha={false} />
+    </span>
+    <div
+      class="flex items-center gap-2 !text-black px-3 drop-shadow-2xl bg-gray-100 rounded-xl"
+    >
       <input
         bind:value={brushSize}
-        class="w-full"
+        class="w-full !m-0"
         min="1"
         max="100"
         step="1"
         type="range"
       />
-      <label for="brush">{brushSize}</label>
+      <label for="brush" class="min-w-[4ch] !text-black">{brushSize} </label>
     </div>
   </div>
 </div>
@@ -226,6 +238,9 @@
     @apply max-w-full w-full z-0 border dark:border-gray-300 border-gray-500 aspect-square;
   }
   .brush {
-    @apply z-10 absolute pointer-events-none -translate-x-1/2 -translate-y-1/2;
+    @apply z-10 absolute pointer-events-none -translate-x-1/2 -translate-y-1/2 dark:text-white;
+  }
+  .color-picker :global(*) {
+    color: black !important;
   }
 </style>
