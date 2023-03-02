@@ -1,8 +1,22 @@
-import './app.css'
+// import './app.css'
+import styles from './app.css?inline'
 import App from './App.svelte'
 
-const app = new App({
-  target: document.getElementById('canvas-root'),
-})
+class CanvasSketch extends HTMLElement {
+  constructor() {
+    super();
+  }
 
-export default app
+  connectedCallback() {
+    const root = this.attachShadow({ mode: 'open' });
+    const style = document.createElement('style');
+    style.appendChild(document.createTextNode(styles));
+    root.appendChild(style);
+    const app = new App({
+      target: root,
+    });
+
+  }
+}
+
+customElements.define("canvas-sketch", CanvasSketch);
